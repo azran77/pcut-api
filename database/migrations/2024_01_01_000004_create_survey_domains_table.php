@@ -1,0 +1,36 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    public function up(): void
+    {
+        Schema::create('survey_domains', function (Blueprint $table) {
+            $table->id();
+            $table->string('code', 1)->unique();   // M, R, P, T, O
+            $table->string('name');
+            $table->string('color', 7);            // hex colour
+            $table->text('description')->nullable();
+            $table->unsignedTinyInteger('sort_order')->default(0);
+            $table->timestamps();
+        });
+
+        Schema::create('survey_items', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('domain_id')->constrained('survey_domains')->onDelete('cascade');
+            $table->string('item_code', 10)->unique();  // M01, R01, …
+            $table->text('statement');
+            $table->unsignedSmallInteger('sort_order')->default(0);
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('survey_items');
+        Schema::dropIfExists('survey_domains');
+    }
+};
