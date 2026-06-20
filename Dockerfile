@@ -29,6 +29,9 @@ RUN mkdir -p bootstrap/cache storage/logs storage/framework/cache \
 # Generate optimised autoloader with the full app present
 RUN composer dump-autoload --no-dev --optimize
 
+COPY docker-start.sh /app/docker-start.sh
+RUN chmod +x /app/docker-start.sh
+
 EXPOSE 8080
 
-CMD php artisan serve --host=0.0.0.0 --port=${PORT:-8080}
+CMD ["/app/docker-start.sh"]
