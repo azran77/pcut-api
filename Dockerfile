@@ -21,6 +21,11 @@ RUN composer config --global policy.advisories.block false && \
 # Copy the rest of the application
 COPY . .
 
+# Create required Laravel directories
+RUN mkdir -p bootstrap/cache storage/logs storage/framework/cache \
+             storage/framework/sessions storage/framework/views && \
+    chmod -R 775 bootstrap/cache storage
+
 # Generate optimised autoloader with the full app present
 RUN composer dump-autoload --no-dev --optimize
 
