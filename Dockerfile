@@ -15,7 +15,8 @@ WORKDIR /app
 COPY composer.json ./
 
 # Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction --prefer-dist --no-audit
+ENV COMPOSER_NO_AUDIT=1
+RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction --prefer-dist
 
 # Copy the rest of the application
 COPY . .
