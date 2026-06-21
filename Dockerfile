@@ -31,4 +31,4 @@ RUN composer dump-autoload --no-dev --optimize
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "php artisan migrate --force && (php artisan db:seed --force || true) && exec php -S 0.0.0.0:${PORT:-8080} -t /app/public"]
+CMD ["sh", "-c", "php artisan migrate --force && (php artisan db:seed --force || true) && exec php -S 0.0.0.0:${PORT:-8080} -t /app/public /app/server.php"]
