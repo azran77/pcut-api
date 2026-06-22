@@ -56,8 +56,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/classes/{id}/educator', [AdminController::class, 'assignEducator']);
 
         // Survey management
-        Route::get('/submissions',       [AdminController::class, 'submissions']);
-        Route::get('/analytics',         [AdminController::class, 'analytics']);
-        Route::delete('/submissions/{id}', [AdminController::class, 'deleteSubmission']);
+        Route::get('/submissions',          [AdminController::class, 'submissions']);
+        Route::get('/analytics',            [AdminController::class, 'analytics']);
+        Route::delete('/submissions/{id}',  [AdminController::class, 'deleteSubmission']);
+        Route::get('/export/responses',     [AdminController::class, 'exportResponses']);
     });
 });

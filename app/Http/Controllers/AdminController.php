@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\ClassGroup;
 use App\Models\Role;
+use App\Models\SurveyItem;
+use App\Models\SurveyResponse;
 use App\Models\SurveySubmission;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
@@ -248,6 +251,74 @@ class AdminController extends Controller
                 'T' => round($submissions->avg('logit_t'), 2),
                 'O' => round($submissions->avg('logit_o'), 2),
             ],
+        ]);
+    }
+
+    // GET /api/admin/export/responses  — CSV download for WINSTEPS / R TAM
+    public function exportResponses(): StreamedResponse
+    {
+        // Ordered item list (same order every export)
+        $items = SurveyItem::where('is_active', true)
+            ->with('domain:id,code')
+            ->orderBy('sort_order')
+            ->get();
+
+        $itemCodes = $items->pluck('item_code')->toArray();
+
+        // All responses keyed by submission_id → item_id → value
+        $responses = SurveyResponse::with('submission.student', 'submission.classGroup')
+            ->get()
+            ->groupBy('submission_id');
+
+        $filename = 'pcut_responses_' . now()->format('Ymd_His') . '.csv';
+
+        return response()->streamDownload(function () use ($items, $itemCodes, $responses) {
+            $handle = fopen('php://output', 'w');
+
+            // Header row
+            $header = array_merge(
+                ['submission_id', 'student_id', 'student_name', 'class_code', 'submitted_at',
+                 'total_score', 'logit_score', 'logit_m', 'logit_r', 'logit_p', 'logit_t', 'logit_o'],
+                $itemCodes
+            );
+            fputcsv($handle, $header);
+
+            // Data rows
+            foreach ($responses as $submissionId => $rows) {
+                $submission = $rows->first()->submission;
+                $student    = $submission->student;
+                $class      = $submission->classGroup;
+
+                // Map item_id → response_value for this submission
+                $responseMap = $rows->keyBy('item_id');
+
+                $row = [
+                    $submissionId,
+                    $student->student_id ?? $student->id,
+                    $student->name,
+                    $class?->code ?? '',
+                    $submission->completed_at,
+                    $submission->total_score,
+                    $submission->logit_score,
+                    $submission->logit_m,
+                    $submission->logit_r,
+                    $submission->logit_p,
+                    $submission->logit_t,
+                    $submission->logit_o,
+                ];
+
+                // Append each item response in order
+                foreach ($items as $item) {
+                    $row[] = $responseMap[$item->id]->response_value ?? '';
+                }
+
+                fputcsv($handle, $row);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
     }
 }
